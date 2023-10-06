@@ -194,18 +194,21 @@ def mass(message):
 
 # Initialize the file_path variable to None
 file_path = None
+MAX_WORKERS = 5
 
 def process_cards(message):
     global file_path
     try:
         if file_path is not None:
-            with open(file_path, 'r') as file:
-                for line in file:
-                    cc_data = line.strip().split('|')
-                    if len(cc_data) == 4:
-                        threading.Thread(target=process_single_cc, args=(cc_data,)).start()
-                        # Add a delay between starting threads (adjust as needed)
-                        time.sleep(2)
+            # Create a ThreadPoolExecutor with a maximum of 5 worker threads
+            with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+                with open(file_path, 'r') as file:
+                    for line in file:
+                        cc_data = line.strip().split('|')
+                        if len(cc_data) == 4:
+                            # Submit each task to the ThreadPoolExecutor
+                            executor.submit(process_single_cc, cc_data)
+
             bot.send_message(message.chat.id, 'Processing complete.')
         else:
             bot.send_message(message.chat.id, 'File not found. Please upload a text file.')
