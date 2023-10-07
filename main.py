@@ -205,7 +205,7 @@ def process_cards(message):
                     if len(cc_data) == 4:
                         threading.Thread(target=process_single_cc, args=(cc_data,)).start()
                         # Add a delay between starting threads (adjust as needed)
-                        time.sleep(2)
+                        time.sleep(6)
             bot.send_message(message.chat.id, 'Processing complete.')
         else:
             bot.send_message(message.chat.id, 'File not found. Please upload a text file.')
