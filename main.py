@@ -173,25 +173,30 @@ def download_file(file_path):
 @bot.message_handler(commands=['mass'])
 def mass(message):
     global file_path
-    if message.reply_to_message and message.reply_to_message.document:
-        if message.reply_to_message.document.mime_type == 'text/plain':
-            file_info = bot.get_file(message.reply_to_message.document.file_id)
-            file_path = download_file(file_info.file_path)
-            start_msg = bot.reply_to(message, 'Your request has been received ✅')
-            
-            edited_messages = [
-                '[🔴] File uploaded',
-                '[🟢] Connected to SITE'
-            ]
-            for msg in edited_messages:
-                edit_and_send_message_with_delay(start_msg.chat.id, start_msg.message_id, msg)
-            
-            process_cards(message)
+    # Check if the user is authorized
+    user_id = message.from_user.id
+    if is_authorized(user_id):
+        if message.reply_to_message and message.reply_to_message.document:
+            if message.reply_to_message.document.mime_type == 'text/plain':
+                file_info = bot.get_file(message.reply_to_message.document.file_id)
+                file_path = download_file(file_info.file_path)
+                start_msg = bot.reply_to(message, 'Your request has been received ✅')
+                
+                edited_messages = [
+                    '[🔴] File uploaded',
+                    '[🟢] Connected to SITE'
+                ]
+                for msg in edited_messages:
+                    edit_and_send_message_with_delay(start_msg.chat.id, start_msg.message_id, msg)
+                
+                process_cards(message)
+            else:
+                bot.reply_to(message, 'Please upload a text file with the extension .txt.')
         else:
-            bot.reply_to(message, 'Please upload a text file with the extension .txt.')
+            bot.reply_to(message, 'Please reply to a message that contains a text file.')
     else:
-        bot.reply_to(message, 'Please reply to a message that contains a text file.')
-
+        bot.reply_to(message, 'You are not authorized to use this command.')
+        
 # Initialize the file_path variable to None
 file_path = None
 
