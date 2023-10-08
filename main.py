@@ -204,14 +204,27 @@ def process_cards(message):
     global file_path
     try:
         if file_path is not None:
+            # Get the total number of CCs to process
+            total_cc_count = sum(1 for _ in open(file_path))
+            processed_cc_count = 0
+            
             with open(file_path, 'r') as file:
                 for line in file:
                     cc_data = line.strip().split('|')
                     if len(cc_data) == 4:
                         threading.Thread(target=process_single_cc, args=(cc_data,)).start()
+                        
+                        # Update the progress message
+                        processed_cc_count += 1
+                        progress_message = f'Processing {processed_cc_count}/{total_cc_count} CCs...'
+                        edit_and_send_message_with_delay(message.chat.id, message.message_id, progress_message)
+                        
                         # Add a delay between starting threads (adjust as needed)
                         time.sleep(6)
-            bot.send_message(message.chat.id, 'Processing complete.')
+                
+                # Final progress message
+                progress_message = f'Processing complete. Checked {processed_cc_count}/{total_cc_count} CCs.'
+                edit_and_send_message_with_delay(message.chat.id, message.message_id, progress_message)
         else:
             bot.send_message(message.chat.id, 'File not found. Please upload a text file.')
     except Exception as e:
