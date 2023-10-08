@@ -868,7 +868,20 @@ Content-Disposition: form-data; name="variation_id"
             bot.send_animation(
                 chat_id=chat_id_1,
                 animation=gif_url,
-                caption=f"Your first message caption goes here...",
+                caption=f"""**𝗔𝗣𝗣𝗥𝗢𝗩𝗘𝗗** ✅
+━━━━━━━━━━━━━━━━━━
+💳 **𝗖𝗮𝗿𝗱:** `{ccnd}`
+🚀 **𝗦𝘁𝗮𝘁𝘂𝘀:** {result}
+🌐 **𝗚𝗮𝘁𝗲𝘄𝗮𝘆:** 21.90€ Woo+Stripe 
+━━━━━━━━━━━━━━━━━━
+**𝗜𝗻𝗳𝗼𝗿𝗺𝗮𝘁𝗶𝗼𝗻:**
+  ⩨ **𝗖𝗮𝗿𝗱 𝗧𝘆𝗽𝗲:** {vendor_var} - {type_var} - {level_var}
+  ⩨ **𝗕𝗮𝗻𝗸:** {bank_name_var}
+  ⩨ **𝗖𝗼𝘂𝗻𝘁𝗿𝘆:** {country_var} {flag}
+━━━━━━━━━━━━━━━━━━
+**𝗧𝗶𝗺𝗲 𝗧𝗮𝗸𝗲𝗻** ➜ `{formatted_time}`
+**𝗣𝗿𝗼𝘅𝗶𝗲𝘀** ➜ `Off`
+━━━━━━━━━━━━━━━━━━""",
                 parse_mode=telegram.ParseMode.MARKDOWN,
                 reply_markup=reply_markup
             )
