@@ -218,6 +218,7 @@ def mass(message):
         bot.reply_to(message, 'You are not authorized to use this command.')
 
 # Modify the process_cards function to accept the chat_id and user_id arguments
+# Modify the process_cards function to accept the chat_id and user_id arguments
 def process_cards(chat_id, user_id):
     global file_path
     try:
@@ -229,6 +230,8 @@ def process_cards(chat_id, user_id):
             # Get the total number of CCs to process
             total_cc_count = sum(1 for _ in open(file_path))
             processed_cc_count = 0
+            
+            progress_message = None  # Initialize progress_message here
             
             with open(file_path, 'r') as file:
                 for line in file:
@@ -253,21 +256,22 @@ def process_cards(chat_id, user_id):
 
                         time.sleep(5)
             
-                # Final progress message
-                progress_message = f"""[☭] 𝗣𝗿𝗼𝗰𝗲𝘀𝘀 𝗖𝗼𝗺𝗽𝗹𝗲𝘁𝗲𝗱 ✅
+            # Final progress message
+            progress_message = f"""[☭] 𝗣𝗿𝗼𝗰𝗲𝘀𝘀 𝗖𝗼𝗺𝗽𝗹𝗲𝘁𝗲𝗱 ✅
 ━━━━━━━━━━━━━━━━━━
 👍 𝗖𝗵𝗲𝗰𝗸𝗶𝗻𝗴 𝗰𝗼𝗺𝗽𝗹𝗲𝘁𝗲𝗱: {processed_cc_count}/{total_cc_count} checked 🚀
 ━━━━━━━━"""
-                bot.send_message(chat_id, progress_message)
+            bot.send_message(chat_id, progress_message)
                 
-                # Mark the user as not running a process
-                user_process_status[user_id] = False
+            # Mark the user as not running a process
+            user_process_status[user_id] = False
         else:
             bot.send_message(chat_id, 'File not found. Please upload a text file.')
     except Exception as e:
         bot.send_message(chat_id, f'An error occurred: {str(e)}')
         # Mark the user as not running a process in case of an error
         user_process_status[user_id] = False
+
 
 
 
