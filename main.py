@@ -230,21 +230,28 @@ def process_cards(chat_id, user_id):
             total_cc_count = sum(1 for _ in open(file_path))
             processed_cc_count = 0
             
-            with open(file_path, 'r') as file:
-                for line in file:
-                    cc_data = line.strip().split('|')
-                    if len(cc_data) == 4:
-                        threading.Thread(target=process_single_cc, args=(chat_id, cc_data)).start()
-                        
-                        # Update the progress message
-                        processed_cc_count += 1
-                        progress_message = f"""[☭] 𝗣𝗿𝗼𝗴𝗿𝗲𝘀𝘀 𝗨𝗽𝗱𝗮𝘁𝗲 ✅
-━━━━━━━━━━━━━━━━━━
-⏳ 𝗖𝗵𝗲𝗰𝗸𝗶𝗻𝗴 𝗶𝗻 𝗽𝗿𝗼𝗴𝗿𝗲𝘀𝘀: {processed_cc_count}/{total_cc_count} checked 🚀
-━━━━━━━━━━━━━━━━━━
-"""
-                        bot.send_message(chat_id, progress_message)
-                        time.sleep(5)
+            for line in file:
+                cc_data = line.strip().split('|')
+                if len(cc_data) == 4:
+                    threading.Thread(target=process_single_cc, args=(chat_id, cc_data)).start()
+
+                    # Update the progress message text
+                    processed_cc_count += 1
+                    progress_text = f"""
+                    [☭] 𝗣𝗿𝗼𝗴𝗿𝗲𝘀𝘀 𝗨𝗽𝗱𝗮𝘁𝗲 ✅
+                    ━━━━━━━━━━━━━━━━━━
+                    ⏳ 𝗖𝗵𝗲𝗰𝗸𝗶𝗻𝗴 𝗶𝗻 𝗽𝗿𝗼𝗴𝗿𝗲𝘀𝘀: {processed_cc_count}/{total_cc_count} checked 🚀
+                    ━━━━━━━━━━━━━━━━━━
+                    """
+
+                    # Send the progress message if it's the first one
+                    if progress_message is None:
+                        progress_message = bot.send_message(chat_id, progress_text)
+                    else:
+                        # Edit the existing progress message
+                        bot.edit_message_text(chat_id=chat_id, message_id=progress_message.message_id, text=progress_text)
+
+                    time.sleep(5)
                 
                 # Final progress message
                 progress_message = f"""[☭] 𝗣𝗿𝗼𝗰𝗲𝘀𝘀 𝗖𝗼𝗺𝗽𝗹𝗲𝘁𝗲𝗱 ✅
