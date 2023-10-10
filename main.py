@@ -240,12 +240,10 @@ def process_cards(chat_id, user_id):
                         threading.Thread(target=process_single_cc, args=(chat_id, cc_data)).start()
                         # Update the progress message text
                         processed_cc_count += 1
-                        progress_text = f"""
-                        [☭] 𝗣𝗿𝗼𝗴𝗿𝗲𝘀𝘀 𝗨𝗽𝗱𝗮𝘁𝗲 ✅
-                        ━━━━━━━━━━━━━━━━━━
-                        ⏳ 𝗖𝗵𝗲𝗰𝗸𝗶𝗻𝗴 𝗶𝗻 𝗽𝗿𝗼𝗴𝗿𝗲𝘀𝘀: {processed_cc_count}/{total_cc_count} checked 🚀
-                        ━━━━━━━━━━━━━━━━━━
-                        """
+                        progress_text = f"""[☭] 𝗣𝗿𝗼𝗴𝗿𝗲𝘀𝘀 𝗨𝗽𝗱𝗮𝘁𝗲 ✅
+━━━━━━━━━━━━━━━━━━
+⏳ 𝗖𝗵𝗲𝗰𝗸𝗶𝗻𝗴 𝗶𝗻 𝗽𝗿𝗼𝗴𝗿𝗲𝘀𝘀: {processed_cc_count}/{total_cc_count} checked 🚀
+ ━━━━━━━━━━━━━━━━━━"""
 
                         # Send the progress message if it's the first one
                         if progress_message is None:
