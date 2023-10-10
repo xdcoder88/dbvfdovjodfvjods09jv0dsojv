@@ -251,7 +251,7 @@ def process_cards(chat_id, user_id):
                         # Edit the existing progress message
                         bot.edit_message_text(chat_id=chat_id, message_id=progress_message.message_id, text=progress_text)
 
-                    time.sleep(5)
+                    time.sleep(4)
                 
                 # Final progress message
                 progress_message = f"""[☭] 𝗣𝗿𝗼𝗰𝗲𝘀𝘀 𝗖𝗼𝗺𝗽𝗹𝗲𝘁𝗲𝗱 ✅
